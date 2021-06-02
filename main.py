@@ -10,14 +10,14 @@ import mplfinance as mpf
 from tkinter.ttk import Progressbar
 import pathlib
 import time
-from tkinter import HORIZONTAL
+from tkinter import HORIZONTAL, END
 
 
 root = tkinter.Tk()
 #window.geometry("1080x720")
 root.state('zoomed')
 # Icon of window
-root.iconbitmap("")
+root.iconbitmap("logo.png")
 # to rename the title of the window
 root.title("MyStock")
 
@@ -33,7 +33,6 @@ def scanner():
     # calculating the simple moving average (which is just mean calculated progressively) 
     # and add the result as a new column to dataframe
     list=[]
-    updated=True
     
     for name, values in nifty.iteritems():
         for index in values:
@@ -78,11 +77,16 @@ def plot_chart():
         #mpf.plot(stock,type='candle',figratio=(38,15),mav=44,style=s)
 
 
+def rising_stocks_list(value):
+    rising_stock_list.insert(END,value)
+    root.update()
+
+
 
 def step():
     #my_progress['value'] += 20
     my_progress= Progressbar(root, orient=HORIZONTAL, length=300, mode="indeterminate")
-    my_progress.pack(pady=20)
+    my_progress.grid(row=3, column=3, columnspan=5, rowspan=5)
     my_progress.start(1)
     scanner()
     my_progress.stop()
@@ -91,7 +95,31 @@ def step():
 
 
 #tkinter.Button(root, text = "Click Me!", command = scanner).pack(pady=20)
-my_button=tkinter.Button(root, text="Progress", command = step)
-my_button.pack(pady=20)
+home_button=tkinter.Button(root, text="Home", width=15, bg="#2962ff" ,fg="#FFFFFF", command = step)
+home_button.grid(row=0, column=0)
+
+market_button=tkinter.Button(root, text="Live Market", width=15, bg="#2962ff" ,fg="#FFFFFF", command = step)
+market_button.grid(row=0, column=1)
+
+scan_stock_button=tkinter.Button(root, text="Scan MA stocks", width=15, bg="#2962ff" ,fg="#FFFFFF", command = step)
+scan_stock_button.grid(row=0, column=2)
+
+
+
+my_label=tkinter.Label(root, text="NSE Indices", width=15,  bg="#2962ff" ,fg="#FFFFFF")
+my_label.grid(row=1, column=0)
+
+my_list=tkinter.Listbox(root, width=15)
+my_list.grid(row=2, column=0)
+my_list.insert(END,"Nifty50")
+my_list.insert(END,"Nifty100")
+my_list.insert(END,"Nifty200")
+
+rising_stock_label=tkinter.Label(root, text="Rising Stocks", width=15, bg="#2962ff" ,fg="#FFFFFF")
+rising_stock_label.grid(row=3, column=0)
+
+rising_stock_list=tkinter.Listbox(root, width=15)
+rising_stock_list.grid(row=4, column=0)
+
 
 root.mainloop()
