@@ -16,8 +16,8 @@ from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg, NavigationToolbar2Tk)
 from itertools import cycle
 from PIL import ImageTk, Image
-import glob
-import os
+import glob,os, shutil
+
 
 root = tkinter.Tk()
 #window.geometry("1080x720")
@@ -29,25 +29,33 @@ root.title("MyStock")
 
 # pack is used to show the object in the window
 #label = tkinter.Label(root, text = "Stock Analysis App for Simple Moving Average").pack()
-
+my_progress=None
+new_window=None
 # creating functions 
-
+def delete_files():
+    files = glob.glob('img/')
+    for f in files:
+        os.remove(f)
+ 
 def scanner():
+    #delete_files()
     nifty=pd.read_csv('NIFTY200.csv')
     for index, row in nifty.iterrows():
-        rising_stock=get_history(row["SYMBOL"],start=datetime(2021,1,1),end=datetime(datetime.now().year,datetime.now().month,datetime.now().day))
+        symbol=row["SYMBOL"]
+        rising_stock=get_history(symbol,start=datetime(2021,1,1),end=datetime(datetime.now().year,datetime.now().month,datetime.now().day))
         my_progress['value'] += 1
         root.update()
         if rising_stock.shape[0]>1 and rising_stock['Open'][-1] < rising_stock['Close'][-1]:
             SMA_window = 44
             rising_stock["44_obs_for_SMA"] = rising_stock["Close"].rolling(window=SMA_window).mean()
 
-            if (rising_stock["High"][-1]>= rising_stock["44_obs_for_SMA"][-1] and rising_stock["Low"][-1]<= rising_stock["44_obs_for_SMA"][-1]) or abs(rising_stock["Low"][-1]-rising_stock["44_obs_for_SMA"][-1])<=2 :
+            if (rising_stock["High"][-1]>= rising_stock["44_obs_for_SMA"][-1] and rising_stock["Low"][-1]<= rising_stock["44_obs_for_SMA"][-1]):
                 rising_stock.reset_index('Date',inplace=True)
                 rising_stock['Date'] = pd.to_datetime(rising_stock.Date)
                 rising_stock.set_index('Date',inplace=True)
                 #print(row["SYMBOL"])
-                rising_stock_list.insert(END,row["SYMBOL"])
+                list2.insert(END,symbol)
+                new_window.title(symbol)
                 #mpf.plot(rising_stock,type='candle',figratio=(38,15),mav=44,style=s)
                 plot_chart(rising_stock,row["SYMBOL"])
         
@@ -84,14 +92,20 @@ def rising_stocks_list(value):
 def step():
     
     global my_progress
-    my_progress= Progressbar(root, orient=HORIZONTAL, length=500, mode="determinate")
-    my_progress.grid(row=3, column=3, columnspan=5, rowspan=5)
+    global new_window
+    new_window=Toplevel(root)
+    new_window.geometry("500x100")
+    new_window.title("Scanning stocks")
+    new_window.resizable(False,False)
+    my_progress= Progressbar(new_window, orient=HORIZONTAL, length=500, mode="determinate")
+    my_progress.pack(padx=20,pady=20)
     my_progress['value'] = 1
     #my_progress.start(1)
-    rising_stock_list.delete(0,END)
+    list2.delete(0,END)
     scanner()
     my_progress.stop()
     my_progress.destroy()
+    new_window.destroy()
     root.update()
 
 
@@ -101,8 +115,22 @@ def slideShow():
   #root.after(50, slideShow) # 0.05 seconds
 
 
+# def delete_files():
+#     folder = '/img'
+#     for filename in os.listdir(folder):
+#         file_path = os.path.join(folder, filename)
+#         try:
+#             if os.path.isfile(file_path) or os.path.islink(file_path):
+#                 os.unlink(file_path)
+#             elif os.path.isdir(file_path):
+#                 shutil.rmtree(file_path)
+#         except Exception as e:
+#             print('Failed to delete %s. Reason: %s' % (file_path, e))
+
+
 def insertfiles():
     # lst.delete(0, tk.END)
+    delete_files()
     for filepath in glob.glob("img/*.png"):
         filename=os.path.basename(filepath).split('.', 1)[0]
         list2.insert(END, filename)
@@ -113,7 +141,7 @@ def delete_item(event):
 
 
 def get_window_size():
-    if chart_frame.winfo_width() > 200 and root.winfo_height() >30:
+    if chart_frame.winfo_width() > 200 and chart_frame.winfo_height() >30:
         w = chart_frame.winfo_width() - 200
         h = chart_frame.winfo_height() - 30
     else:
@@ -182,7 +210,7 @@ list_frame2.pack(fill=X)
 
 list2.pack(fill=X, expand=True)
 list2.bind("<<ListboxSelect>>", showing)
-insertfiles()
+
 
 
 left_frame.pack(side=LEFT, fill=Y)
@@ -190,9 +218,7 @@ left_frame.pack(side=LEFT, fill=Y)
 
 
 # middle frame layout
-chart_frame=Frame(frame,bg="orange")
-lb=Label(chart_frame,text="test",width=30)
-lb.pack()
+chart_frame=Frame(frame)
 canvas = Canvas(chart_frame)
 canvas.pack()
 chart_frame.pack(side=LEFT, fill=BOTH, expand=True)
@@ -200,12 +226,10 @@ chart_frame.pack(side=LEFT, fill=BOTH, expand=True)
 
 
 # right frame layout
-right_frame=Frame(frame,bg="yellow")
-lb=Label(frame,text="test2",width=30)
-lb.pack()
-right_frame.pack(side=RIGHT, fill=Y)
-
-
+# right_frame=Frame(frame,bg="yellow")
+# lb=Label(frame,text="test2",width=30)
+# lb.pack()
+# right_frame.pack(side=RIGHT, fill=Y)
 
 
 root.mainloop()
