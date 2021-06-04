@@ -20,8 +20,9 @@ import glob,os, shutil
 
 
 root = tkinter.Tk()
-#window.geometry("1080x720")
-root.state('zoomed')
+
+root.geometry("600x400")
+#root.state('zoomed')
 # Icon of window
 root.iconbitmap("logo.png")
 # to rename the title of the window
@@ -32,14 +33,10 @@ root.title("MyStock")
 my_progress=None
 new_window=None
 # creating functions 
-def delete_files():
-    files = glob.glob('img/')
-    for f in files:
-        os.remove(f)
  
 def scanner():
-    #delete_files()
     nifty=pd.read_csv('NIFTY200.csv')
+
     for index, row in nifty.iterrows():
         symbol=row["SYMBOL"]
         rising_stock=get_history(symbol,start=datetime(2021,1,1),end=datetime(datetime.now().year,datetime.now().month,datetime.now().day))
@@ -55,9 +52,9 @@ def scanner():
                 rising_stock.set_index('Date',inplace=True)
                 #print(row["SYMBOL"])
                 list2.insert(END,symbol)
-                new_window.title(symbol)
+                #new_window.title(symbol)
                 #mpf.plot(rising_stock,type='candle',figratio=(38,15),mav=44,style=s)
-                plot_chart(rising_stock,row["SYMBOL"])
+                plot_chart(rising_stock,symbol)
         
         
     
@@ -70,34 +67,29 @@ def plot_chart(df,symbol):
         #mpf.plot(stock,type='candle',figratio=(38,15),mav=44,style=s)
 
 
-def plot(event):
-
-    n = rising_stock_list.curselection()
-    filename = rising_stock_list.get(n)
-    print(filename)
-    image = Image.open("img/{filename}.png".format(filename=filename))
-    resize_image = image.resize((1100,650))
-    img = ImageTk.PhotoImage(resize_image)
-    main_label.config(image=img)
-    root.update()
-  
    
-
-def rising_stocks_list(value):
-    rising_stock_list.insert(END,value)
-    root.update()
-
-
 
 def step():
     
     global my_progress
     global new_window
-    new_window=Toplevel(root)
-    new_window.geometry("500x100")
-    new_window.title("Scanning stocks")
-    new_window.resizable(False,False)
-    my_progress= Progressbar(new_window, orient=HORIZONTAL, length=500, mode="determinate")
+    # window_width = 500
+    # window_height = 100
+
+    # get the screen dimension
+    # screen_width = root.winfo_screenwidth()
+    # screen_height = root.winfo_screenheight()
+
+    # # find the center point
+    # center_x = int(screen_width/2 - window_width / 2)
+    # center_y = int(screen_height/2 - window_height / 2)
+
+    # # set the position of the window to the center of the screen
+    # new_window=Toplevel(root)
+    # new_window.geometry(f'{window_width}x{window_height}+{center_x}+{center_y}')
+    # new_window.title("Scanning stocks")
+    # new_window.resizable(False,False)
+    my_progress= Progressbar(chart_frame, orient=HORIZONTAL, length=500, mode="determinate")
     my_progress.pack(padx=20,pady=20)
     my_progress['value'] = 1
     #my_progress.start(1)
@@ -105,39 +97,8 @@ def step():
     scanner()
     my_progress.stop()
     my_progress.destroy()
-    new_window.destroy()
-    root.update()
+    #new_window.destroy()
 
-
-def slideShow():
-  #img = next(photos)
-  main_label.config(image=img)
-  #root.after(50, slideShow) # 0.05 seconds
-
-
-# def delete_files():
-#     folder = '/img'
-#     for filename in os.listdir(folder):
-#         file_path = os.path.join(folder, filename)
-#         try:
-#             if os.path.isfile(file_path) or os.path.islink(file_path):
-#                 os.unlink(file_path)
-#             elif os.path.isdir(file_path):
-#                 shutil.rmtree(file_path)
-#         except Exception as e:
-#             print('Failed to delete %s. Reason: %s' % (file_path, e))
-
-
-def insertfiles():
-    # lst.delete(0, tk.END)
-    delete_files()
-    for filepath in glob.glob("img/*.png"):
-        filename=os.path.basename(filepath).split('.', 1)[0]
-        list2.insert(END, filename)
-def delete_item(event):
-    n = lst.curselection()
-    os.remove(lst.get(n))
-    lst.delete(n)
 
 
 def get_window_size():
@@ -172,7 +133,7 @@ frame.pack(fill="both",expand=True)
 header_frame=Frame(frame,bg="yellow")
 button1=Button(header_frame, text="Home", width=15, bg="#2962ff" ,fg="#FFFFFF", command = step)
 button1.grid(row=0,column=0,sticky="nsew")
-button2=Button(header_frame, text="Live Market", width=15, bg="#2962ff" ,fg="#FFFFFF", command = plot)
+button2=Button(header_frame, text="Live Market", width=15, bg="#2962ff" ,fg="#FFFFFF", command = step)
 button2.grid(row=0,column=1,sticky="nsew")
 button3=Button(header_frame, text="Scan MA stocks", width=15, bg="#2962ff" ,fg="#FFFFFF", command = step)
 button3.grid(row=0,column=3,sticky="nsew")
@@ -222,14 +183,6 @@ chart_frame=Frame(frame)
 canvas = Canvas(chart_frame)
 canvas.pack()
 chart_frame.pack(side=LEFT, fill=BOTH, expand=True)
-
-
-
-# right frame layout
-# right_frame=Frame(frame,bg="yellow")
-# lb=Label(frame,text="test2",width=30)
-# lb.pack()
-# right_frame.pack(side=RIGHT, fill=Y)
 
 
 root.mainloop()
