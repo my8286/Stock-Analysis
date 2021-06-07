@@ -12,3 +12,6 @@ dist/
 build/
 main.spec
 __pycache__/
+backtest.py
+test5.py
+v3.py
