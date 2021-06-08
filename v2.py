@@ -26,8 +26,9 @@ def refresh():
             root.update()
         except:
             print("exception occur")
-
+dict={}
 def scanner():
+    global dict
     nifty=pd.read_csv('NIFTY500.csv')
 
     for index, row in nifty.iterrows():
@@ -58,16 +59,27 @@ def scanner():
                         rising_stock.set_index('Date',inplace=True)
                         #print(row["SYMBOL"])
                         list.insert(END,symbol)
+                        data_list=[]
+                        data_list.append(row["Company Name"])
+                        data_list.append(row["Industry"])
+                        dict[symbol]=data_list
                         
 
 canvas1=None
 def showing(event):
     global canvas1
     canvas1.destroy()
-    canvas1=Label(chart_frame)
-    canvas1.pack(fill="both",expand=True)
+    
+    
     n = list.curselection()
     symbol = list.get(n)
+    data_list=dict[symbol]
+    
+    name_label.config(text=f"Symbol: {data_list[0]}")
+    sector_label.config(text=f"Sector: {data_list[1]}")
+    canvas1=Label(chart_frame,bg="#F9FBFD")
+    canvas1.pack(fill="both",expand=True)
+
     df=pd.read_csv(f'stocks/{symbol}.csv',index_col=0,parse_dates=True)
     mc = mpf.make_marketcolors(up='g', #Green
                                down='r', #Red
@@ -75,26 +87,26 @@ def showing(event):
                                wick='black',
                                volume='in')
     
-    s  = mpf.make_mpf_style(base_mpl_style="seaborn", 
+    s  = mpf.make_mpf_style(
                             mavcolors=["blue","orange"],
                             facecolor = "#F9FBFD",
-                            gridcolor = "#F2F2F2",
+                            gridcolor = "#F9FBFD",
                             gridstyle = "--",
                             marketcolors=mc)
     
     fig, ax = mpf.plot(df,type='candle',
                       style = s,
                       mav=44,
-                      title = f"{symbol}",
-                      figratio=(82,46),
+                      #title = f"{symbol}",
+                      figratio=(60,30),
                       returnfig=True
                       )
     
     
     canvas = FigureCanvasTkAgg(fig, master=canvas1)   
     canvas.draw()
-    canvas.get_tk_widget().pack()
-
+    canvas.get_tk_widget().pack(fill=BOTH, expand=True)
+    list.bind("<Configure>", showing)
 
 root=Tk()
 
@@ -102,18 +114,47 @@ root=Tk()
 root.state("zoomed")
   
 
-header_frame=Frame(root,bg="red",height=30,width=100)
-button1=Button(header_frame, text="Scan Stock" ,command=scanner)
+header_frame=Frame(root,height=30,width=100, bg="#3700B3")
+button1=Button(header_frame, text="Home" ,bg="#2962ff" ,fg="#FFFFFF", command=scanner)
 button1.grid(row=0,column=0,sticky="nsew")
-button2=Button(header_frame, text="Refresh" ,command=refresh)
+button2=Button(header_frame, text="Rising Stock", bg="#2962ff" ,fg="#FFFFFF", command=scanner)
 button2.grid(row=0,column=1,sticky="nsew")
+button3=Button(header_frame, text="Scan Stock", bg="#2962ff" ,fg="#FFFFFF" ,command=scanner)
+button3.grid(row=0,column=2,sticky="nsew")
+button4=Button(header_frame, text="Refresh", bg="#2962ff" ,fg="#FFFFFF" ,command=refresh)
+button4.grid(row=0,column=3,sticky="nsew")
+header_frame.grid_columnconfigure(0,weight=1)
+header_frame.grid_columnconfigure(1,weight=1)
+header_frame.grid_columnconfigure(2,weight=1)
+header_frame.grid_columnconfigure(3,weight=1)
 header_frame.pack(fill=X)
 
-aside_frame=Frame(root, bg="blue")
-
+aside_frame=Frame(root)
+# Index list
 list_frame= Frame(aside_frame)
 list_scrollbar= Scrollbar(list_frame, orient=VERTICAL)
-list=Listbox(list_frame, width=30, height=20, yscrollcommand=list_scrollbar.set)
+list=Listbox(list_frame, width=30, height=15, yscrollcommand=list_scrollbar.set)
+label=Label(list_frame, text="Index Stocks", width=30,  bg="#2962ff" ,fg="#FFFFFF")
+label.pack()
+
+list_scrollbar.config(command=list.yview)
+list_scrollbar.pack(side=RIGHT,fill=Y)
+list_frame.pack()
+
+list.pack(fill=X, expand=True)
+list.insert(END,"Nifty")
+list.insert(END,"Nifty50")
+list.insert(END,"Nifty100")
+list.insert(END,"Nifty200")
+list.insert(END,"Nifty100")
+list.insert(END,"CNXIT")
+list.insert(END,"CNXPHARMA")
+
+
+# Rising stock list
+list_frame= Frame(aside_frame)
+list_scrollbar= Scrollbar(list_frame, orient=VERTICAL,bg="#F9FBFD")
+list=Listbox(list_frame, width=30, height=23, yscrollcommand=list_scrollbar.set)
 label=Label(list_frame, text="Rising Stocks", width=30,  bg="#2962ff" ,fg="#FFFFFF")
 label.pack()
 
@@ -125,12 +166,19 @@ list.pack(fill=X, expand=True)
 list.bind("<<ListboxSelect>>", showing)
 aside_frame.pack(side=LEFT, fill=Y)
 
-chart_frame=Frame(root, bg="lime",padx=2,pady=5)
+chart_frame=Frame(root,padx=2,pady=5,bg="#F9FBFD")
 chart_frame.pack(side=LEFT, fill=BOTH, expand=True)
 
-canvas1 = Canvas(chart_frame,bg="red")
-canvas1.pack(expand=True, fill=BOTH)
+horizontal_frame=Frame(chart_frame,bg="#F9FBFD")
+horizontal_frame.pack(fill=X)
+name_label=Label(horizontal_frame,text=f"Symbol: ",bg="#F9FBFD")
+name_label.grid(row=0, column=0, padx=10,pady=10,sticky="nsew")
+sector_label=Label(horizontal_frame,text="sector: IT",bg="#F9FBFD")
+sector_label.grid(row=0, column=1, padx=10,pady=10,sticky="nsew")
+horizontal_frame.grid_columnconfigure(0,weight=1)
+horizontal_frame.grid_columnconfigure(1,weight=1)
+canvas1=Label(chart_frame,bg="#F9FBFD")
+canvas1.pack()
 
-chart_frame.pack_propagate(0)
 
 root.mainloop()
