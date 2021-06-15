@@ -7,14 +7,47 @@ import matplotlib.pyplot as plt
 from datetime import datetime, timedelta
 import pathlib
 from threading import *
+from tkinter.ttk import Progressbar
 import matplotlib as matplotlib
 matplotlib.use("TkAgg")
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+from nsetools import Nse
+my_progress=None
+def progress():
+    global my_progress
+    window_width = 500
+    window_height = 100
+
+    #get the screen dimension
+    screen_width = root.winfo_screenwidth()
+    screen_height = root.winfo_screenheight()
+
+    # find the center point
+    center_x = int(screen_width/2 - window_width / 2)
+    center_y = int(screen_height/2 - window_height / 2)
+
+    # set the position of the window to the center of the screen
+    new_window=Toplevel(root)
+    new_window.geometry(f'{window_width}x{window_height}+{center_x}+{center_y}')
+    new_window.title("Scanning stocks")
+    new_window.resizable(False,False)
+
+    my_progress= Progressbar(new_window, orient=HORIZONTAL, length=500, mode="determinate")
+    my_progress.pack(padx=20,pady=20)
+    my_progress['value'] = 1
+    refresh()
+    my_progress.stop()
+    my_progress.destroy()
+    new_window.destroy()
+    # scanner()
 
 def refresh():
+    global my_progress
     nifty=pd.read_csv('NIFTY500.csv')
     for index, row in nifty.iterrows():
         try:
+            my_progress['value'] += 1
+            root.update()
             symbol=row["Symbol"]
             d = datetime.today() - timedelta(days=150)
             day=datetime.now().day
@@ -23,14 +56,17 @@ def refresh():
             df=get_history(symbol,start=datetime(d.year,d.month,d.day),end=datetime(year,month,day))
             data=pd.DataFrame(df)
             data.to_csv(f"stocks/{symbol}.csv")
-            root.update()
+            
         except:
             print("exception occur")
+
+
 dict={}
 def scanner():
+    
     global dict
     nifty=pd.read_csv('NIFTY500.csv')
-
+    list.delete(0,END)
     for index, row in nifty.iterrows():
         symbol=row["Symbol"]
         rising_stock=pd.read_csv(f'stocks/{symbol}.csv',index_col=0,parse_dates=True)
@@ -70,7 +106,6 @@ def showing(event):
     global canvas1
     canvas1.destroy()
     
-    
     n = list.curselection()
     symbol = list.get(n)
     data_list=dict[symbol]
@@ -108,20 +143,31 @@ def showing(event):
     canvas.get_tk_widget().pack(fill=BOTH, expand=True)
     list.bind("<Configure>", showing)
 
+def update():
+    nse = Nse()
+    q = nse.get_quote('infy')
+    price=q["lastPrice"]
+    button1.config(text=f"{price}")
+    root.after(6000, update())
+    root.update()
 root=Tk()
 
 #root.geometry("800x600+0+0")
 root.state("zoomed")
+root.iconbitmap("img/logo.ico")
+root.title("MyStock")
+
+
   
 
 header_frame=Frame(root,height=30,width=100, bg="#3700B3")
-button1=Button(header_frame, text="Home" ,bg="#2962ff" ,fg="#FFFFFF", command=scanner)
+button1=Label(header_frame, text="Home" ,bg="#2962ff" ,fg="#FFFFFF")
 button1.grid(row=0,column=0,sticky="nsew")
 button2=Button(header_frame, text="Rising Stock", bg="#2962ff" ,fg="#FFFFFF", command=scanner)
 button2.grid(row=0,column=1,sticky="nsew")
 button3=Button(header_frame, text="Scan Stock", bg="#2962ff" ,fg="#FFFFFF" ,command=scanner)
 button3.grid(row=0,column=2,sticky="nsew")
-button4=Button(header_frame, text="Refresh", bg="#2962ff" ,fg="#FFFFFF" ,command=refresh)
+button4=Button(header_frame, text="Refresh", bg="#2962ff" ,fg="#FFFFFF" ,command=progress)
 button4.grid(row=0,column=3,sticky="nsew")
 header_frame.grid_columnconfigure(0,weight=1)
 header_frame.grid_columnconfigure(1,weight=1)
@@ -131,24 +177,24 @@ header_frame.pack(fill=X)
 
 aside_frame=Frame(root)
 # Index list
-list_frame= Frame(aside_frame)
-list_scrollbar= Scrollbar(list_frame, orient=VERTICAL)
-list=Listbox(list_frame, width=30, height=15, yscrollcommand=list_scrollbar.set)
-label=Label(list_frame, text="Index Stocks", width=30,  bg="#2962ff" ,fg="#FFFFFF")
-label.pack()
+# list_frame= Frame(aside_frame)
+# list_scrollbar= Scrollbar(list_frame, orient=VERTICAL)
+# list=Listbox(list_frame, width=30, height=15, yscrollcommand=list_scrollbar.set)
+# label=Label(list_frame, text="Index Stocks", width=30,  bg="#2962ff" ,fg="#FFFFFF")
+# label.pack()
 
-list_scrollbar.config(command=list.yview)
-list_scrollbar.pack(side=RIGHT,fill=Y)
-list_frame.pack()
+# list_scrollbar.config(command=list.yview)
+# list_scrollbar.pack(side=RIGHT,fill=Y)
+# list_frame.pack()
 
-list.pack(fill=X, expand=True)
-list.insert(END,"Nifty")
-list.insert(END,"Nifty50")
-list.insert(END,"Nifty100")
-list.insert(END,"Nifty200")
-list.insert(END,"Nifty100")
-list.insert(END,"CNXIT")
-list.insert(END,"CNXPHARMA")
+# list.pack(fill=X, expand=True)
+# list.insert(END,"Nifty")
+# list.insert(END,"Nifty50")
+# list.insert(END,"Nifty100")
+# list.insert(END,"Nifty200")
+# list.insert(END,"Nifty100")
+# list.insert(END,"CNXIT")
+# list.insert(END,"CNXPHARMA")
 
 
 # Rising stock list
@@ -173,12 +219,12 @@ horizontal_frame=Frame(chart_frame,bg="#F9FBFD")
 horizontal_frame.pack(fill=X)
 name_label=Label(horizontal_frame,text=f"Symbol: ",bg="#F9FBFD")
 name_label.grid(row=0, column=0, padx=10,pady=10,sticky="nsew")
-sector_label=Label(horizontal_frame,text="sector: IT",bg="#F9FBFD")
+sector_label=Label(horizontal_frame,text="sector:",bg="#F9FBFD")
 sector_label.grid(row=0, column=1, padx=10,pady=10,sticky="nsew")
 horizontal_frame.grid_columnconfigure(0,weight=1)
 horizontal_frame.grid_columnconfigure(1,weight=1)
 canvas1=Label(chart_frame,bg="#F9FBFD")
 canvas1.pack()
 
-
+#root.after(6000, update())
 root.mainloop()
