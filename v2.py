@@ -110,7 +110,7 @@ def showing(event):
     symbol = list.get(n)
     data_list=dict[symbol]
     
-    name_label.config(text=f"Symbol: {data_list[0]}")
+    name_label.config(text=f"Symbol: {symbol}")
     sector_label.config(text=f"Sector: {data_list[1]}")
     canvas1=Label(chart_frame,bg="#F9FBFD")
     canvas1.pack(fill="both",expand=True)
@@ -122,7 +122,7 @@ def showing(event):
                                wick='black',
                                volume='in')
     
-    s  = mpf.make_mpf_style(
+    s  = mpf.make_mpf_style(base_mpl_style="fast",
                             mavcolors=["blue","orange"],
                             facecolor = "#F9FBFD",
                             gridcolor = "#F9FBFD",
@@ -134,8 +134,11 @@ def showing(event):
                       mav=44,
                       #title = f"{symbol}",
                       figratio=(60,30),
+                      figscale=2,
                       returnfig=True
                       )
+    ax[0].legend(["SMA 44"])
+    ax[0].set_title(data_list[0])
     
     
     canvas = FigureCanvasTkAgg(fig, master=canvas1)   
